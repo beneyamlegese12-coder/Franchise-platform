@@ -3,10 +3,10 @@ import type { FormEvent } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api, money, errText } from "./api";
 import type { User } from "./App";
-import { PointPool } from "./Points";
 import { ChannelsTab } from "./ClubQueue";
 import { ReversalsTab, SettlementTab } from "./AdminMoney";
 import { GamesTab } from "./AdminGames";
+import { MoveCards } from './path-to-MoveCards'; // Example: './components/MoveCards'
 
 const TABS = ["Overview", "Users", "Mint credits", "Rates", "Reversals", "Settlement", "Games", "Agents", "Point Requests", "Payment Accounts", "Checks and audit"] as const;
 type Tab = (typeof TABS)[number];
@@ -16,7 +16,6 @@ function useGet<T>(key: string, url: string) {
   return useQuery<T>({ queryKey: [key], queryFn: async () => (await api.get(url)).data });
 }
 const when = (s: string) => new Date(s).toLocaleString();
-const pct = (bps: number) => bps / 100 + "%";
 const toBps = (s: string) => Math.round(parseFloat(s) * 100);
 
 function Status({ s }: { s: string }) {

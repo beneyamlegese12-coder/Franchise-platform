@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api, money, errText } from "./api";
+import { ReactNode } from 'react';
 
 type Agent = { id: number; name: string; phone: string | null; status: string; balance_minor: number };
 
