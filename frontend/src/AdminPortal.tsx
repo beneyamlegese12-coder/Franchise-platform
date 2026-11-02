@@ -6,7 +6,7 @@ import type { User } from "./App";
 import { ChannelsTab } from "./ClubQueue";
 import { ReversalsTab, SettlementTab } from "./AdminMoney";
 import { GamesTab } from "./AdminGames";
-import { MoveCards } from './path-to-MoveCards'; // Example: './components/MoveCards'
+import { MoveCards } from './components/MoveCards'; // Example: './components/MoveCards'
 
 const TABS = ["Overview", "Users", "Mint credits", "Rates", "Reversals", "Settlement", "Games", "Agents", "Point Requests", "Payment Accounts", "Checks and audit"] as const;
 type Tab = (typeof TABS)[number];
