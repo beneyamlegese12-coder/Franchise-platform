@@ -28,14 +28,14 @@ async function plain<T>(fn: () => Promise<T>): Promise<T> {
 
 lobby.get("/games", async (_req, res) => {
   const r = await pool.query(
-    "SELECT id, slug, title, category, provider, gateway, rtp_bps, volatility, theme FROM games WHERE active ORDER BY sort_order, id"
+    "SELECT id, slug, title, category, provider, gateway, rtp_bps, volatility, theme FROM games WHERE active AND provider NOT IN (SELECT name FROM providers WHERE status='disabled') ORDER BY sort_order, id"
   );
   res.json(r.rows);
 });
 
 // Checks the player may play. With a real provider this is where the game URL would come from.
 lobby.post("/games/:id/launch", auth(["player"]), async (req, res) => {
-  const g = (await pool.query("SELECT id, title FROM games WHERE id=$1 AND active", [Number(req.params.id)])).rows[0];
+  const g = (await pool.query("SELECT id, title FROM games WHERE id=$1 AND active AND provider NOT IN (SELECT name FROM providers WHERE status='disabled')", [Number(req.params.id)])).rows[0];
   if (!g) throw new HttpError(404, "Game not found");
   await plain(() => assertCanPlay(pool, req.user!.id, 0));
   res.json({ game_id: g.id, title: g.title, demo: demoOn(), launch_url: null });
@@ -52,7 +52,7 @@ lobby.post("/games/:id/demo-round", auth(["player"]), async (req, res) => {
   const uid = req.user!.id;
 
   const out = await plain(() => withTx(async (c) => {
-    const g = (await c.query("SELECT id, slug, rtp_bps, volatility FROM games WHERE id=$1 AND active", [Number(req.params.id)])).rows[0];
+    const g = (await c.query("SELECT id, slug, rtp_bps, volatility FROM games WHERE id=$1 AND active AND provider NOT IN (SELECT name FROM providers WHERE status='disabled')", [Number(req.params.id)])).rows[0];
     if (!g) throw new HttpError(404, "Game not found");
     await assertCanPlay(c, uid, stake);
 

@@ -17,7 +17,7 @@ export default function StaffLogin({ onDone }: { onDone: (u: User) => void }) {
     setError("");
     setBusy(true);
     try {
-      const { data } = await api.post("/auth/login", { username, password, code: needCode ? code : undefined });
+      const { data } = await api.post("/auth/login", { phone: username, password, code: needCode ? code : undefined });
       if (data.need_code) { setNeedCode(true); return; }
       localStorage.setItem("token", data.token);
       localStorage.setItem("user", JSON.stringify(data.user));
@@ -45,8 +45,8 @@ export default function StaffLogin({ onDone }: { onDone: (u: User) => void }) {
         </div>
         <div className="st-strip">SECURE ADMIN / AGENT CREDENTIAL VALIDATOR</div>
         <div className="st-body">
-          <label htmlFor="su">USERNAME</label>
-          <input id="su" autoComplete="username" placeholder="e.g. nexus_admin or vortex_elite" value={username} disabled={needCode} onChange={(e) => setUsername(e.target.value)} autoFocus />
+          <label htmlFor="su">PHONE NUMBER</label>
+          <input id="su" type="tel" inputMode="tel" autoComplete="tel" placeholder="e.g. 0912345678" value={username} disabled={needCode} onChange={(e) => setUsername(e.target.value)} autoFocus />
           <label htmlFor="sp">PASSWORD</label>
           <input id="sp" type="password" autoComplete="current-password" placeholder="Enter your password" value={password} disabled={needCode} onChange={(e) => setPassword(e.target.value)} />
           {needCode && (

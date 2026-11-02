@@ -1,6 +1,7 @@
 import { Router } from "express";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
+import { normalizePhone } from "../phone.js";
 import { pool, withTx } from "../db/pool.js";
 import { auth } from "../auth.js";
 import { HttpError } from "../errors.js";
@@ -37,17 +38,19 @@ club.get("/players", auth(["club"]), async (req, res) => {
 
 club.post("/players", auth(["club"]), async (req, res) => {
   const p = z.object({
-    username: z.string().regex(/^[a-z0-9_]{3,30}$/, "Username: 3-30 lowercase letters, numbers or underscores"),
+    phone: z.string().min(1, "Enter a phone number").max(40),
     display_name: z.string().min(1).max(60),
     password: z.string().min(8).max(100),
   }).safeParse(req.body);
   if (!p.success) { res.status(400).json({ error: p.error.issues[0].message }); return; }
   try {
+    const phoneN = normalizePhone(p.data.phone);
+    if (!phoneN) { res.status(400).json({ error: "Enter a valid Ethiopian mobile number, for example 0912345678" }); return; }
     const hash = await bcrypt.hash(p.data.password, 10);
     const id = await withTx(async (c) => {
       const u = await c.query(
-        "INSERT INTO users (role, parent_id, username, display_name, password_hash) VALUES ('player',$1,$2,$3,$4) RETURNING id",
-        [req.user!.id, p.data.username, p.data.display_name, hash]
+        "INSERT INTO users (role, parent_id, username, phone, display_name, password_hash) VALUES ('player',$1,$2,$2,$3,$4) RETURNING id",
+        [req.user!.id, phoneN, p.data.display_name, hash]
       );
       await c.query("INSERT INTO accounts (user_id, type) VALUES ($1,'credit'), ($1,'hold')", [u.rows[0].id]);
       await c.query("INSERT INTO audit_logs (actor_id, action, entity, entity_id) VALUES ($1,'create_player','user',$2)", [req.user!.id, u.rows[0].id]);
@@ -55,7 +58,7 @@ club.post("/players", auth(["club"]), async (req, res) => {
     });
     res.status(201).json({ id });
   } catch (e: any) {
-    if (e?.code === "23505") { res.status(409).json({ error: "That username is already taken" }); return; }
+    if (e?.code === "23505") { res.status(409).json({ error: "That phone number is already registered" }); return; }
     throw e;
   }
 });

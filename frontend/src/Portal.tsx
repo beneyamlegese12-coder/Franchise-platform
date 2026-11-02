@@ -217,7 +217,7 @@ export default function Portal({ user, onLogout }: { user: User; onLogout: () =>
       </header>
       <main>
         {tab === "Overview" && <OverviewTab />}
-        {tab === "Agents" && <AgentsTab />}
+        {tab === "Agents" && <><MoveCards who="sub-agent" withRegister /><AgentsTab /></>}
         {tab === "Ledgers" && <LedgersTab />}
         {tab === "Requests" && <PointRequestForm to="Admin" />}
         {tab === "Point Requests" && <PointPool who="sub-agents" />}

@@ -4,6 +4,7 @@ import jwt from "jsonwebtoken";
 import rateLimit from "express-rate-limit";
 import QRCode from "qrcode";
 import { z } from "zod";
+import { normalizePhone } from "../phone.js";
 import { pool, withTx } from "../db/pool.js";
 import { auth } from "../auth.js";
 import { HttpError } from "../errors.js";
@@ -31,16 +32,21 @@ const log = (actor: number | null, action: string, entity: string, id: number | 
 
 security.post("/auth/login", loginLimiter, async (req, res) => {
   const p = z.object({
-    username: z.string().min(1).max(60),
+    phone: z.string().max(40).optional(),
+    username: z.string().max(60).optional(),
     password: z.string().min(1).max(200),
     code: z.string().max(10).optional(),
   }).safeParse(req.body);
-  if (!p.success) { res.status(400).json({ error: "Username and password are required" }); return; }
+  if (!p.success || (!p.data.phone && !p.data.username)) { res.status(400).json({ error: "Phone number and password are required" }); return; }
 
-  const u = (await pool.query("SELECT * FROM users WHERE username=$1", [p.data.username])).rows[0];
+  const phone = p.data.phone ? normalizePhone(p.data.phone) : null;
+  const byName = !p.data.phone && !!p.data.username && process.env.ALLOW_USERNAME_LOGIN !== "false";
+  const u = (phone || byName)
+    ? (await pool.query(phone ? "SELECT * FROM users WHERE phone=$1" : "SELECT * FROM users WHERE username=$1", [phone ?? p.data.username])).rows[0]
+    : undefined;
   if (!u) {
     await bcrypt.compare(p.data.password, DUMMY); // same timing whether or not the user exists
-    res.status(401).json({ error: "Wrong username or password" });
+    res.status(401).json({ error: "Wrong phone number or password" });
     return;
   }
   if (u.locked_until && new Date(u.locked_until) > new Date()) {
@@ -56,7 +62,7 @@ security.post("/auth/login", loginLimiter, async (req, res) => {
     } else {
       await pool.query("UPDATE users SET failed_attempts=$2 WHERE id=$1", [u.id, n]);
     }
-    res.status(401).json({ error: "Wrong username or password" });
+    res.status(401).json({ error: "Wrong phone number or password" });
   };
 
   if (!(await bcrypt.compare(p.data.password, u.password_hash))) { await fail(); return; }
@@ -166,12 +172,15 @@ const registerLimiter = rateLimit({ windowMs: 3_600_000, limit: 10 });
 
 security.post("/auth/register", registerLimiter, async (req, res) => {
   const p = z.object({
-    username: z.string().regex(/^[a-z0-9_]{3,30}$/, "Username: 3-30 lowercase letters, numbers or underscores"),
+    phone: z.string().min(1, "Enter your phone number").max(40),
     display_name: z.string().trim().min(1, "Enter your name").max(60),
     password: z.string().min(1, "Choose a password").max(200),
     date_of_birth: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Enter your date of birth"),
   }).safeParse(req.body);
   if (!p.success) { res.status(400).json({ error: p.error.issues[0].message }); return; }
+
+  const phone = normalizePhone(p.data.phone);
+  if (!phone) throw new HttpError(400, "Enter a valid Ethiopian mobile number, for example 0912345678");
 
   const d = new Date(p.data.date_of_birth + "T00:00:00Z");
   if (isNaN(d.getTime())) throw new HttpError(400, "Enter a valid date of birth");
@@ -182,8 +191,9 @@ security.post("/auth/register", registerLimiter, async (req, res) => {
   const minAge = Number(process.env.MIN_AGE) || 18;
   if (age < minAge) throw new HttpError(400, "You must be at least " + minAge + " years old to register");
 
-  const bad = checkPasswordPolicy(p.data.password, p.data.username);
+  const bad = checkPasswordPolicy(p.data.password, phone);
   if (bad) throw new HttpError(400, bad);
+  if (p.data.password.includes(phone.slice(4))) throw new HttpError(400, "Your password must not contain your phone number");
 
   const club = (await pool.query(
     "SELECT id FROM users WHERE username=$1 AND role='club' AND status='active'",
@@ -195,17 +205,17 @@ security.post("/auth/register", registerLimiter, async (req, res) => {
     const hash = await bcrypt.hash(p.data.password, 12);
     const id = await withTx(async (c) => {
       const u = await c.query(
-        "INSERT INTO users (role, parent_id, username, display_name, password_hash, date_of_birth, must_change_password) VALUES ('player',$1,$2,$3,$4,$5,false) RETURNING id",
-        [club.id, p.data.username, p.data.display_name, hash, p.data.date_of_birth]
+        "INSERT INTO users (role, parent_id, username, phone, display_name, password_hash, date_of_birth, must_change_password) VALUES ('player',$1,$2,$2,$3,$4,$5,false) RETURNING id",
+        [club.id, phone, p.data.display_name, hash, p.data.date_of_birth]
       );
-      await c.query("INSERT INTO accounts (user_id, type) VALUES ($1,'credit')", [u.rows[0].id]);
+      await c.query("INSERT INTO accounts (user_id, type) VALUES ($1,'credit'), ($1,'hold')", [u.rows[0].id]);
       await c.query("INSERT INTO audit_logs (actor_id, action, entity, entity_id, detail) VALUES ($1,'self_register','user',$1,$2)", [u.rows[0].id, JSON.stringify({ club_id: club.id })]);
       return u.rows[0].id as number;
     });
-    const token = jwt.sign({ id, role: "player", username: p.data.username }, process.env.JWT_SECRET as string, { expiresIn: "4h" });
-    res.status(201).json({ token, user: { id, role: "player", username: p.data.username, name: p.data.display_name } });
+    const token = jwt.sign({ id, role: "player", username: phone }, process.env.JWT_SECRET as string, { expiresIn: "4h" });
+    res.status(201).json({ token, user: { id, role: "player", username: phone, name: p.data.display_name } });
   } catch (e: any) {
-    if (e?.code === "23505") { res.status(409).json({ error: "That username is already taken" }); return; }
+    if (e?.code === "23505") { res.status(409).json({ error: "That phone number is already registered" }); return; }
     throw e;
   }
 });

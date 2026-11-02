@@ -130,3 +130,29 @@ select:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
 @media (max-width:900px){.pgrid{grid-template-columns:1fr}}
 .opt{background:var(--bg);color:var(--text);border:1px solid var(--line);border-radius:12px;padding:14px;font:700 13px ui-monospace,Consolas,monospace;letter-spacing:.05em;cursor:pointer}
 .opt.on{background:rgba(22,184,148,.12);border-color:rgba(22,184,148,.5);color:#2fe0b2}
+.net3{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:20px;align-items:start}
+.pick{position:relative;margin-bottom:12px}
+.pick input{margin:0}
+.pickl{position:absolute;z-index:20;left:0;right:0;top:100%;margin-top:4px;background:var(--panel);border:1px solid var(--line);border-radius:12px;max-height:260px;overflow:auto;padding:6px;box-shadow:0 12px 30px rgba(0,0,0,.5)}
+.pickl button{display:block;width:100%;text-align:left;background:none;border:0;color:var(--text);padding:10px;border-radius:8px;cursor:pointer;font:inherit}
+.pickl button:hover,.pickl button[aria-selected="true"]{background:rgba(255,255,255,.06)}
+.btn.danger{background:#cc0033;border-color:#cc0033;color:#fff}
+.two2{display:grid;grid-template-columns:minmax(280px,1fr) 2fr;gap:20px;align-items:start}
+.two2.even{grid-template-columns:1fr 1fr}
+@media (max-width:900px){.two2,.two2.even{grid-template-columns:1fr}}
+.vgrid{display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start;margin-top:14px}
+@media (max-width:760px){.vgrid{grid-template-columns:1fr}}
+.vrow{margin-bottom:14px}
+.vbar{height:7px;background:var(--bg);border-radius:99px;overflow:hidden;margin-top:6px}
+.vbar div{height:100%;background:linear-gradient(90deg,#e04cb8,#7a5cff);border-radius:99px}
+.kv{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:8px 0;font-size:14px}
+.secretrow{display:flex;gap:8px;align-items:center;margin-bottom:12px}
+.secretrow input{margin:0;flex:1;font-family:ui-monospace,Consolas,monospace}
+.tpill.kind{background:rgba(90,98,232,.15);color:#9aa4ff;border:1px solid rgba(90,98,232,.4)}
+.badge{display:inline-block;min-width:18px;margin-left:8px;padding:1px 6px;border-radius:99px;background:#e0243c;color:#fff;font:700 11px inherit;text-align:center}
+.adminnav{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.adminnav .navbreak{flex-basis:100%;height:0}
+.adminnav .subtab{font-size:13px;opacity:.85}
+.pagefoot{margin-top:40px;padding:22px 0;border-top:1px solid var(--line);text-align:center;color:var(--mute);font:12px ui-monospace,Consolas,monospace}
+.s-pending{background:rgba(255,170,0,.12);color:#ffb62e;border-color:rgba(255,170,0,.4)}
+.s-approved{background:rgba(22,184,148,.12);color:#2fe0b2;border-color:rgba(22,184,148,.4)}

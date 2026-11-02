@@ -31,11 +31,11 @@ export function PlayerAuth({ start, onDone, onClose }: { start: "login" | "regis
     setBusy(true);
     try {
       if (mode === "login") {
-        const { data } = await api.post("/auth/login", { username: username.trim(), password, code: needCode ? code : undefined });
+        const { data } = await api.post("/auth/login", { phone: username.trim(), password, code: needCode ? code : undefined });
         if (data.need_code) { setNeedCode(true); return; }
         save(data);
       } else {
-        const { data } = await api.post("/auth/register", { username: username.trim().toLowerCase(), display_name: name, password, date_of_birth: dob });
+        const { data } = await api.post("/auth/register", { phone: username.trim(), display_name: name, password, date_of_birth: dob });
         save(data);
       }
     } catch (err) {
@@ -62,9 +62,9 @@ export function PlayerAuth({ start, onDone, onClose }: { start: "login" | "regis
             <input id="pn" autoComplete="name" value={name} onChange={(e) => setName(e.target.value)} />
           </>
         )}
-        <label htmlFor="pu">Username</label>
-        <input id="pu" autoComplete="username" value={username} disabled={needCode} onChange={(e) => setUsername(e.target.value)} autoFocus />
-        {reg && <p className="note">3-30 lowercase letters, numbers or underscores.</p>}
+        <label htmlFor="pu">Phone number</label>
+        <input id="pu" type="tel" inputMode="tel" autoComplete="tel" placeholder="0912345678" value={username} disabled={needCode} onChange={(e) => setUsername(e.target.value)} autoFocus />
+        {reg && <p className="note">Your Ethiopian mobile number. You will use it to sign in.</p>}
         <label htmlFor="pp">Password</label>
         <input id="pp" type="password" autoComplete={reg ? "new-password" : "current-password"} value={password} disabled={needCode} onChange={(e) => setPassword(e.target.value)} />
         {reg && <p className="note">At least 10 characters, with upper case, lower case and a number.</p>}

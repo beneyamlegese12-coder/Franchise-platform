@@ -42,13 +42,13 @@ type Pl = { id: number; name: string; username: string; status: string; credit_b
 function PlayersTab() {
   const qc = useQueryClient();
   const { data = [], isLoading } = useGet<Pl[]>("club-players", "/players");
-  const [f, setF] = useState({ username: "", display_name: "", password: "" });
+  const [f, setF] = useState({ phone: "", display_name: "", password: "" });
   const [msg, setMsg] = useState("");
   const done = () => REFRESH.forEach((k) => qc.invalidateQueries({ queryKey: [k] }));
 
   const create = useMutation({
     mutationFn: async () => (await api.post("/players", f)).data,
-    onSuccess: () => { setMsg(""); setF({ username: "", display_name: "", password: "" }); done(); },
+    onSuccess: () => { setMsg(""); setF({ phone: "", display_name: "", password: "" }); done(); },
     onError: (e) => setMsg(errText(e)),
   });
   const setStatus = useMutation({
@@ -64,9 +64,9 @@ function PlayersTab() {
         <h2>Add a player</h2>
         <form onSubmit={submit} className="inline">
           <div><label htmlFor="pn">Name</label><input id="pn" value={f.display_name} onChange={(e) => setF({ ...f, display_name: e.target.value })} /></div>
-          <div><label htmlFor="pu">Username</label><input id="pu" value={f.username} onChange={(e) => setF({ ...f, username: e.target.value.toLowerCase() })} /></div>
+          <div><label htmlFor="pu">Phone number</label><input id="pu" value={f.phone} onChange={(e) => setF({ ...f, phone: e.target.value })} /></div>
           <div><label htmlFor="pp">Password (8+ characters)</label><input id="pp" type="password" value={f.password} onChange={(e) => setF({ ...f, password: e.target.value })} /></div>
-          <button className="btn" disabled={create.isPending || !f.username || !f.display_name || f.password.length < 8}>Add player</button>
+          <button className="btn" disabled={create.isPending || !f.phone || !f.display_name || f.password.length < 8}>Add player</button>
         </form>
         {msg && <p className="err">{msg}</p>}
       </div>
@@ -74,7 +74,7 @@ function PlayersTab() {
         <h2>Your players</h2>
         {isLoading ? <p className="note">Loading...</p> : (
           <div className="tw"><table>
-            <thead><tr><th>Player</th><th>Username</th><th>Status</th><th className="n">Credit balance</th><th></th></tr></thead>
+            <thead><tr><th>Player</th><th>Phone</th><th>Status</th><th className="n">Credit balance</th><th></th></tr></thead>
             <tbody>{data.map((p) => (
               <tr key={p.id}>
                 <td>{p.name}</td><td>{p.username}</td><td><Status s={p.status} /></td>

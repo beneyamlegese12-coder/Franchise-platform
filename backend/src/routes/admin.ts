@@ -2,6 +2,7 @@ import { Router } from "express";
 import bcrypt from "bcryptjs";
 import { randomUUID } from "node:crypto";
 import { z } from "zod";
+import { normalizePhone } from "../phone.js";
 import { pool, withTx } from "../db/pool.js";
 import { auth } from "../auth.js";
 import { post } from "../services/ledger.js";
@@ -41,7 +42,7 @@ admin.post("/admin/users", only, async (req, res) => {
   const p = z.object({
     role: z.enum(["super", "club"]),
     parent_id: z.number().int().positive().optional(),
-    username: z.string().regex(/^[a-z0-9_]{3,30}$/, "Username: 3-30 lowercase letters, numbers or underscores"),
+    phone: z.string().min(1, "Enter a phone number").max(40),
     display_name: z.string().min(1).max(60),
     password: z.string().min(8).max(100),
     deposit_rate_bps: z.number().int().min(0).max(10000),
@@ -50,6 +51,8 @@ admin.post("/admin/users", only, async (req, res) => {
   if (!p.success) { res.status(400).json({ error: p.error.issues[0].message }); return; }
   const d = p.data;
   try {
+    const phoneN = normalizePhone(d.phone);
+    if (!phoneN) { res.status(400).json({ error: "Enter a valid Ethiopian mobile number, for example 0912345678" }); return; }
     const hash = await bcrypt.hash(d.password, 10);
     const id = await withTx(async (c) => {
       let parent = req.user!.id;
@@ -60,8 +63,8 @@ admin.post("/admin/users", only, async (req, res) => {
         parent = d.parent_id;
       }
       const u = await c.query(
-        "INSERT INTO users (role, parent_id, username, display_name, password_hash) VALUES ($1,$2,$3,$4,$5) RETURNING id",
-        [d.role, parent, d.username, d.display_name, hash]
+        "INSERT INTO users (role, parent_id, username, phone, display_name, password_hash) VALUES ($1,$2,$3,$3,$4,$5) RETURNING id",
+        [d.role, parent, phoneN, d.display_name, hash]
       );
       const uid = u.rows[0].id as number;
       await c.query("INSERT INTO accounts (user_id, type) VALUES ($1,'credit'), ($1,'commission')", [uid]);
@@ -77,7 +80,7 @@ admin.post("/admin/users", only, async (req, res) => {
     });
     res.status(201).json({ id });
   } catch (e: any) {
-    if (e?.code === "23505") { res.status(409).json({ error: "That username is already taken" }); return; }
+    if (e?.code === "23505") { res.status(409).json({ error: "That phone number is already registered" }); return; }
     throw e;
   }
 });

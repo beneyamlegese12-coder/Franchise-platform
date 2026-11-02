@@ -8,7 +8,7 @@ import { ChannelsTab } from "./ClubQueue";
 import { ReversalsTab, SettlementTab } from "./AdminMoney";
 import { GamesTab } from "./AdminGames";
 
-const TABS = ["Overview", "Users", "Mint credits", "Rates", "Reversals", "Settlement", "Games", "Point Requests", "Payment Accounts", "Checks and audit"] as const;
+const TABS = ["Overview", "Users", "Mint credits", "Rates", "Reversals", "Settlement", "Games", "Agents", "Point Requests", "Payment Accounts", "Checks and audit"] as const;
 type Tab = (typeof TABS)[number];
 const KEYS = ["admin-overview", "admin-users", "admin-rates", "admin-audit", "admin-reconcile"];
 
@@ -62,7 +62,7 @@ function UsersTab() {
     mutationFn: async () => (await api.post("/admin/users", {
       role: f.role,
       parent_id: f.role === "club" && f.parent_id ? Number(f.parent_id) : undefined,
-      username: f.username, display_name: f.display_name, password: f.password,
+      phone: f.username, display_name: f.display_name, password: f.password,
       deposit_rate_bps: toBps(f.dep), withdrawal_rate_bps: toBps(f.wd),
     })).data,
     onSuccess: () => { setMsg(""); setOk("Created " + f.display_name + "."); setF(empty); done(); },
@@ -93,7 +93,7 @@ function UsersTab() {
               </select></div>
           )}
           <div><label htmlFor="n">Name</label><input id="n" value={f.display_name} onChange={(e) => setF({ ...f, display_name: e.target.value })} /></div>
-          <div><label htmlFor="un">Username</label><input id="un" value={f.username} onChange={(e) => setF({ ...f, username: e.target.value.toLowerCase() })} /></div>
+          <div><label htmlFor="un">Phone number</label><input id="un" value={f.username} onChange={(e) => setF({ ...f, username: e.target.value.toLowerCase() })} /></div>
           <div><label htmlFor="pw">Password (8+ characters)</label><input id="pw" type="password" value={f.password} onChange={(e) => setF({ ...f, password: e.target.value })} /></div>
           <div><label htmlFor="dp">Deposit rate (%)</label><input id="dp" type="number" min="0" step="0.01" value={f.dep} onChange={(e) => setF({ ...f, dep: e.target.value })} /></div>
           <div><label htmlFor="wr">Withdrawal rate (%)</label><input id="wr" type="number" min="0" step="0.01" value={f.wd} onChange={(e) => setF({ ...f, wd: e.target.value })} /></div>
@@ -191,7 +191,7 @@ function RateRow({ r }: { r: Rate }) {
   );
 }
 
-function RatesTab() {
+export function RatesTab() {
   const { data = [], isLoading } = useGet<Rate[]>("admin-rates", "/admin/rates");
   return (
     <div className="card">
@@ -213,7 +213,7 @@ type Rec = {
 };
 type Log = { id: number; action: string; entity: string; entity_id: number | null; detail: unknown; created_at: string; actor: string | null };
 
-function ChecksTab() {
+export function ChecksTab() {
   const rec = useQuery<Rec>({ queryKey: ["admin-reconcile"], queryFn: async () => (await api.get("/admin/reconcile")).data });
   const { data: logs = [], isLoading } = useGet<Log[]>("admin-audit", "/admin/audit");
   const r = rec.data;
@@ -276,7 +276,7 @@ export default function AdminPortal({ user, onLogout }: { user: User; onLogout: 
         {tab === "Reversals" && <ReversalsTab />}
         {tab === "Settlement" && <SettlementTab />}
         {tab === "Games" && <GamesTab />}
-        {tab === "Point Requests" && <PointPool who="super agents" />}
+        {tab === "Agents" && <MoveCards who="super agent" />}
         {tab === "Payment Accounts" && <ChannelsTab path="/my/channels" />}
         {tab === "Checks and audit" && <ChecksTab />}
       </main>

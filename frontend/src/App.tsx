@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
 import type { FormEvent, ReactNode } from "react";
 import { api, errText } from "./api";
-import Portal from "./Portal";
+import Portal from "./SuperConsole";
 import ClubPortal from "./ClubPortal";
-import AdminPortal from "./AdminPortal";
+import AdminPortal from "./AdminConsole";
 import PlayerApp from "./PlayerApp";
 import StaffLogin from "./StaffLogin";
 import SecurityPanel, { ChangePassword, TwoFactor } from "./SecurityPanel";
@@ -32,7 +32,7 @@ function Login({ onDone }: { onDone: (u: User) => void }) {
     setError("");
     setBusy(true);
     try {
-      const { data } = await api.post("/auth/login", { username, password, code: needCode ? code : undefined });
+      const { data } = await api.post("/auth/login", { phone: username, password, code: needCode ? code : undefined });
       if (data.need_code) { setNeedCode(true); return; }
       localStorage.setItem("token", data.token);
       localStorage.setItem("user", JSON.stringify(data.user));
@@ -50,8 +50,8 @@ function Login({ onDone }: { onDone: (u: User) => void }) {
       <form className="card" onSubmit={submit}>
         <div className="tag">FRANCHISE PORTAL</div>
         <h1>Sign in</h1>
-        <label htmlFor="u">Username</label>
-        <input id="u" value={username} disabled={needCode} onChange={(e) => setUsername(e.target.value)} autoFocus />
+        <label htmlFor="u">Phone number</label>
+        <input id="u" type="tel" inputMode="tel" autoComplete="tel" placeholder="0912345678" value={username} disabled={needCode} onChange={(e) => setUsername(e.target.value)} autoFocus />
         <label htmlFor="p">Password</label>
         <input id="p" type="password" value={password} disabled={needCode} onChange={(e) => setPassword(e.target.value)} />
         {needCode && (

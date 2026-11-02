@@ -9,6 +9,9 @@ import { pool } from "./db/pool.js";
 import { HttpError } from "./errors.js";
 import { queue } from "./routes/queue.js";
 import { points } from "./routes/points.js";
+import { network } from "./routes/network.js";
+import { adminDash } from "./routes/admin_dash.js";
+import { superDash } from "./routes/super_dash.js";
 import { startScheduler } from "./services/scheduler.js";
 import { security } from "./routes/security.js";
 import { rg } from "./routes/rg.js";
@@ -56,6 +59,9 @@ app.get("/api/v1/health", async (_req, res) => {
 
 app.use("/api/v1", queue);
 app.use("/api/v1", points);
+app.use("/api/v1", network);
+app.use("/api/v1", adminDash);
+app.use("/api/v1", superDash);
 app.use("/api/v1", security);
 app.use("/api/v1", rg);
 app.use("/api/v1", withdrawals);
